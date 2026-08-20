@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  email         String?  @unique
+  phone         String   @unique
+  passwordHash  String
+  role          Role     @default(FARMER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  farmerProfile FarmerProfile?
+  buyerProfile  BuyerProfile?
+  transporterProfile TransporterProfile?
+  products      Product[]
+  ordersAsBuyer Order[]  @relation("BuyerOrders")
+  ordersAsFarmer Order[] @relation("FarmerOrders")
+  ordersAsTransporter Order[] @relation("TransporterOrders")
+  reviewsGiven  Review[] @relation("BuyerReviews")
+  reviewsReceived Review[] @relation("FarmerReviews")
+  reviewsReceivedAsTransporter Review[] @relation("TransporterReviews")
+  conversationsAsBuyer Conversation[] @relation("BuyerConversations")
+  conversationsAsFarmer Conversation[] @relation("FarmerConversations")
+  conversationsAsTransporter Conversation[] @relation("TransporterConversations")
+  messages Message[]
+  transactions Transaction[]
+  paymentIntents PaymentIntent[]
+  diseaseDetections DiseaseDetection[]  // ✅ ADDED
+}
+
+model FarmerProfile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @unique @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+  region      String
+  city        String?
+  farmSize    Float?
+  description String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BuyerProfile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @unique @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+  companyName String?
+  location    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TransporterProfile {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @unique @db.Uuid
+  user        User     @relation(fields: [userId], references: [id])
+  vehicleType String
+  vehicleCapacity String
+  licensePlate String
+  region      String
+  city        String?
+  description String?
+  verified    Boolean  @default(false)
+  rating      Float?   @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farmerId    String   @db.Uuid
+  farmer      User     @relation(fields: [farmerId], references: [id])
+  name        String
+  category    String
+  description String?
+  quantity    Float
+  unit        Unit     @default(KG)
+  price       Float
+  location    String
+  imageUrl    String?
+  status      ProductStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  buyerId     String   @db.Uuid
+  buyer       User     @relation("BuyerOrders", fields: [buyerId], references: [id])
+  farmerId    String   @db.Uuid
+  farmer      User     @relation("FarmerOrders", fields: [farmerId], references: [id])
+  transporterId String? @db.Uuid
+  transporter User?    @relation("TransporterOrders", fields: [transporterId], references: [id])
+  productId   String   @db.Uuid
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Float
+  totalPrice  Float
+  deliveryAddress String?
+  deliveryStatus DeliveryStatus @default(PENDING)
+  status      OrderStatus @default(PENDING)
+  paymentStatus OrderPaymentStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  paymentIntent PaymentIntent?
+  transactions Transaction[]
+  payment Payment?
+  review  Review?
+  commission Commission?
+}
+
+model Payment {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String   @unique @db.Uuid
+  order           Order    @relation(fields: [orderId], references: [id])
+  amount          Float
+  commissionAmount Float
+  deliveryFee     Float?   @default(0)
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Review {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String   @unique @db.Uuid
+  order       Order    @relation(fields: [orderId], references: [id])
+  buyerId     String   @db.Uuid
+  buyer       User     @relation("BuyerReviews", fields: [buyerId], references: [id])
+  farmerId    String   @db.Uuid
+  farmer      User     @relation("FarmerReviews", fields: [farmerId], references: [id])
+  transporterId String? @db.Uuid
+  transporter User?    @relation("TransporterReviews", fields: [transporterId], references: [id])
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+}
+
+model Conversation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  buyerId   String   @db.Uuid
+  buyer     User     @relation("BuyerConversations", fields: [buyerId], references: [id])
+  farmerId  String?  @db.Uuid
+  farmer    User?    @relation("FarmerConversations", fields: [farmerId], references: [id])
+  transporterId String? @db.Uuid
+  transporter User?  @relation("TransporterConversations", fields: [transporterId], references: [id])
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([buyerId, farmerId, transporterId])
+}
+
+model Message {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId String   @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  senderId       String   @db.Uuid
+  sender         User     @relation(fields: [senderId], references: [id])
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ==================== PAYMENT MODELS ====================
+
+model PaymentIntent {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String       @unique @db.Uuid
+  order        Order        @relation(fields: [orderId], references: [id])
+  userId       String       @db.Uuid
+  user         User         @relation(fields: [userId], references: [id])
+  amount       Float
+  currency     String       @default("ETB")
+  status       PaymentIntentStatus @default(CREATED)
+  provider     String       @default("CHAPA")
+  providerTxId String?      @unique
+  checkoutUrl  String?
+  expiresAt    DateTime
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId      String   @db.Uuid
+  order        Order    @relation(fields: [orderId], references: [id])
+  userId       String   @db.Uuid
+  user         User     @relation(fields: [userId], references: [id])
+  paymentIntentId String? @db.Uuid
+  paymentIntent PaymentIntent? @relation(fields: [paymentIntentId], references: [id])
+  amount       Float
+  type         TransactionType
+  status       TransactionStatus @default(PENDING)
+  reference    String   @unique
+  description  String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Commission {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId         String   @unique @db.Uuid
+  order           Order    @relation(fields: [orderId], references: [id])
+  amount          Float
+  rate            Float    @default(0.03)
+  status          CommissionStatus @default(PENDING)
+  paidAt          DateTime?
+  paymentRef      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==================== AI MODELS ====================
+
+model DiseaseDetection {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl    String
+  disease     String
+  confidence  Float
+  isHealthy   Boolean  @default(false)
+  treatment   String?
+  description String?
+  prevention  String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  FARMER
+  BUYER
+  TRANSPORTER
+  ADMIN
+}
+
+enum Unit {
+  KG
+  QUINTAL
+  TON
+  BUNDLE
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  SOLD
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderPaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentIntentStatus {
+  CREATED
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  COMMISSION_PAYOUT
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
+  FAILED
+}
