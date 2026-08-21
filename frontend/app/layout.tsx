@@ -5,8 +5,6 @@ import { AuthProvider } from '../context/AuthContext';
 import { Header } from '../components/layout/header';
 import { Footer } from '../components/layout/footer';
 import { Toaster } from 'sonner';
-import { Navbar } from '../components/Navbar';
-
 
 export const metadata: Metadata = {
   title: 'AgriLink Ethiopia',
