@@ -26,6 +26,7 @@ import { AiModule } from './ai/ai.module';
 import { WeatherModule } from './weather/weather.module';
 
 import { MarketModule } from './market/market.module'; 
+import { ChatbotModule } from './chatbot/chatbot.module'; 
 
 // Controllers
 import { AppController } from './app.controller';
@@ -73,6 +74,7 @@ import { AppService } from './app.service';
     WeatherModule,
 
     MarketModule,
+    ChatbotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

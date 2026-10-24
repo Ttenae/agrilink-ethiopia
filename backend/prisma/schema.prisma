@@ -34,6 +34,7 @@ model User {
   transactions Transaction[]
   paymentIntents PaymentIntent[]
   diseaseDetections DiseaseDetection[]  // ✅ ADDED
+   chatMessages      ChatMessage[]
 }
 
 model FarmerProfile {
@@ -267,6 +268,15 @@ model MarketPrice {
   @@index([commodity, date])
 }
 
+model ChatMessage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   // "user" or "assistant"
+  content   String
+  language  String   @default("en") // "en", "am", "om"
+  createdAt DateTime @default(now())
+}
 
 // ==================== ENUMS ====================
 

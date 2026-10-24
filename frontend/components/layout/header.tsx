@@ -44,6 +44,9 @@ export const Header = () => {
             <Link href="/products" className="text-muted-foreground hover:text-foreground transition-colors">
               Products
             </Link>
+            <Link href="/chatbot" className="text-sm font-medium text-gray-700 hover:text-green-600 transition-colors flex items-center gap-1">
+               Assistant
+            </Link>
             <Link href="/market" className="text-sm font-medium text-gray-700 hover:text-green-600">
               Market Prices
             </Link>
