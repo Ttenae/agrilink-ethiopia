@@ -5,95 +5,60 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async getUsers(userId: string, userRole: string) {
-    const users = await this.prisma.user.findMany({
-      where: {
-        id: { not: userId },
-      },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        role: true,
-        email: true,
-        createdAt: true,
-        farmerProfile: {
-          select: {
-            region: true,
-            city: true,
-            verified: true,
-          },
-        },
-        buyerProfile: {
-          select: {
-            companyName: true,
-            location: true,
-          },
-        },
-        transporterProfile: {
-          select: {
-            vehicleType: true,
-            vehicleCapacity: true,
-            licensePlate: true,
-            region: true,
-            city: true,
-            verified: true,
-          },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
+  // ... your existing functions (findOne, findAll, etc) ...
 
-    return {
-      data: users,
-      total: users.length,
-    };
-  }
+  // ✅ ADD THIS NEW FUNCTION
+  async updateProfile(userId: string, data: any) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
 
-  async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    // 1. Update base user details
+    const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        farmerProfile: {
-          select: {
-            region: true,
-            city: true,
-            farmSize: true,
-            description: true,
-            verified: true,
-          },
-        },
-        buyerProfile: {
-          select: {
-            companyName: true,
-            location: true,
-            description: true,
-          },
-        },
-        transporterProfile: {
-          select: {
-            vehicleType: true,
-            vehicleCapacity: true,
-            licensePlate: true,
-            region: true,
-            city: true,
-            description: true,
-            verified: true,
-          },
-        },
+      data: {
+        name: data.name,
+        email: data.email,
       },
     });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+    // 2. Update Farmer Profile if applicable
+    if (user.role === 'FARMER' && data.farmerProfile) {
+      await this.prisma.farmerProfile.upsert({
+        where: { userId },
+        update: {
+          region: data.farmerProfile.region,
+          city: data.farmerProfile.city,
+          farmSize: data.farmerProfile.farmSize,
+          description: data.farmerProfile.description,
+        },
+        create: {
+          userId,
+          region: data.farmerProfile.region || 'Unknown',
+          city: data.farmerProfile.city,
+          farmSize: data.farmerProfile.farmSize,
+          description: data.farmerProfile.description,
+        },
+      });
     }
 
-    return user;
+    // 3. Update Buyer Profile if applicable
+    if (user.role === 'BUYER' && data.buyerProfile) {
+      await this.prisma.buyerProfile.upsert({
+        where: { userId },
+        update: {
+          companyName: data.buyerProfile.companyName,
+          location: data.buyerProfile.location,
+          description: data.buyerProfile.description,
+        },
+        create: {
+          userId,
+          companyName: data.buyerProfile.companyName,
+          location: data.buyerProfile.location,
+          description: data.buyerProfile.description,
+        },
+      });
+    }
+
+    return { message: 'Profile updated successfully' };
   }
 }

@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
-import { Header } from '../components/layout/header';
-import { Footer } from '../components/layout/footer';
-import { Toaster } from 'sonner';
+import Header from '../components/layout/header';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'AgriLink Ethiopia',
-  description: 'Agricultural Marketplace and Intelligence Platform',
+  description: 'Agricultural Marketplace & AI Assistant',
 };
 
 export default function RootLayout({
@@ -18,19 +18,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gray-50 text-gray-900 antialiased`}>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </div>
-          <Toaster position="top-right" richColors />
+          <Header />
+          <main className="min-h-screen">
+            {children}
+          </main>
         </AuthProvider>
       </body>
     </html>
   );
 }
-const inter = Inter({ subsets: ['latin'] });
