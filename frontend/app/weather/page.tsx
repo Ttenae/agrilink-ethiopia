@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
   Cloud, CloudRain, Sun, Wind, Droplets, Thermometer,
-  MapPin, Loader2, RefreshCw, Navigation
+  MapPin, Loader2, RefreshCw, Navigation, CloudLightning
 } from 'lucide-react';
 
 interface WeatherData {
@@ -20,7 +20,6 @@ interface WeatherData {
   advisory: string[];
 }
 
-// ✅ Removed parentheses to prevent URL encoding errors
 const CITIES = [
   'Addis Ababa', 'Adama', 'Jimma', 'Hawassa', 'Bahir Dar',
   'Gondar', 'Mekelle', 'Dire Dawa', 'Harar', 'Arba Minch',
@@ -47,7 +46,6 @@ export default function WeatherPage() {
   };
 
   useEffect(() => {
-    // ✅ Don't re-fetch if GPS was used
     if (selectedLocation !== 'My Current Location') {
       fetchWeather(selectedLocation);
     }
@@ -84,10 +82,14 @@ export default function WeatherPage() {
     );
   };
 
-  const getWeatherIcon = (condition: string) => {
-    if (condition?.toLowerCase().includes('rain')) return <CloudRain className="h-8 w-8 text-blue-500" />;
-    if (condition?.toLowerCase().includes('cloud')) return <Cloud className="h-8 w-8 text-gray-500" />;
-    return <Sun className="h-8 w-8 text-yellow-500" />;
+  // ✅ Accurate icons based on Open-Meteo weather codes
+  const getWeatherIcon = (code: number, className = "h-8 w-8") => {
+    if (code === 0 || code === 1) return <Sun className={`${className} text-yellow-500`} />;
+    if (code === 2 || code === 3) return <Cloud className={`${className} text-gray-500`} />;
+    if (code >= 51 && code <= 65) return <CloudRain className={`${className} text-blue-500`} />;
+    if (code >= 80 && code <= 82) return <CloudRain className={`${className} text-blue-600`} />;
+    if (code >= 95) return <CloudLightning className={`${className} text-purple-600`} />;
+    return <Sun className={`${className} text-yellow-500`} />; // Fallback
   };
 
   return (
@@ -159,7 +161,7 @@ export default function WeatherPage() {
                       </div>
                       <p className="text-sm opacity-80 capitalize mt-1">{weather.current.description}</p>
                     </div>
-                    {getWeatherIcon(weather.current.condition)}
+                    {getWeatherIcon(weather.current.weatherCode, "h-12 w-12 opacity-90")}
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t border-white/20 pt-6">
@@ -225,7 +227,7 @@ export default function WeatherPage() {
                           <span className="font-medium w-24">
                             {i === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </span>
-                          {getWeatherIcon(day.condition)}
+                          {getWeatherIcon(day.weatherCode)}
                           <span className="text-sm capitalize text-gray-600 hidden sm:block">{day.description}</span>
                         </div>
                         <div className="flex items-center gap-4 text-sm">

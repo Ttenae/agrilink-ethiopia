@@ -7,7 +7,7 @@ export class WeatherService {
   private readonly logger = new Logger(WeatherService.name);
   private readonly BASE_URL = 'https://api.open-meteo.com/v1/forecast';
 
-  // ✅ Clean names (no parentheses or special characters)
+  // ✅ Clean names (no special characters to avoid URL errors)
   private readonly REGION_COORDS: Record<string, { lat: number; lon: number }> = {
     'Addis Ababa': { lat: 9.0320, lon: 38.7469 },
     'Adama': { lat: 8.5400, lon: 39.2700 },
@@ -28,7 +28,7 @@ export class WeatherService {
 
   constructor(private prisma: PrismaService) {}
 
-  // ==================== FETCH ALL DATA AT ONCE (Open-Meteo) ====================
+  // ==================== FETCH DATA (Open-Meteo) ====================
   private async fetchOpenMeteoData(lat: number, lon: number) {
     try {
       const response = await axios.get(this.BASE_URL, {
@@ -49,7 +49,7 @@ export class WeatherService {
     }
   }
 
-  // ==================== MAP WMO CODES TO DESCRIPTIONS ====================
+  // ==================== MAP WMO CODES ====================
   private getWeatherInfo(code: number) {
     const mapping: Record<number, { condition: string; description: string; icon: string }> = {
       0: { condition: 'Clear', description: 'clear sky', icon: '01d' },
@@ -77,7 +77,7 @@ export class WeatherService {
     return mapping[code] || { condition: 'Unknown', description: 'unknown', icon: '01d' };
   }
 
-  // ==================== HELPER: MAP DATA ====================
+  // ==================== MAP DATA ====================
   private mapWeatherData(data: any, lat: number, lon: number, regionName: string) {
     const current = data.current;
     const daily = data.daily;
@@ -92,6 +92,7 @@ export class WeatherService {
       condition: currentInfo.condition,
       description: currentInfo.description,
       icon: currentInfo.icon,
+      weatherCode: current.weather_code, // ✅ Passed for frontend icons
       uvIndex: daily.uv_index_max[0],
       timestamp: new Date().toISOString(),
       location: { lat, lon },
@@ -103,14 +104,13 @@ export class WeatherService {
         date: date,
         tempMin: daily.temperature_2m_min[i],
         tempMax: daily.temperature_2m_max[i],
-        humidity: 60, 
-        windSpeed: daily.wind_speed_10m_max[i],
         condition: dayInfo.condition,
         description: dayInfo.description,
-        icon: dayInfo.icon,
+        weatherCode: daily.weather_code[i], // ✅ Passed for frontend icons
         rainChance: daily.precipitation_probability_max[i] / 100,
         rainAmount: daily.precipitation_sum[i],
         uvIndex: daily.uv_index_max[i],
+        windSpeed: daily.wind_speed_10m_max[i],
       };
     });
 
@@ -123,49 +123,33 @@ export class WeatherService {
     };
   }
 
-  // ==================== GET WEATHER BY REGION NAME ====================
+  // ==================== ROUTES ====================
   async getWeatherByRegion(region: string) {
     const coords = this.REGION_COORDS[region];
     if (!coords) {
       throw new BadRequestException(`Unknown region: ${region}`);
     }
-
     const data = await this.fetchOpenMeteoData(coords.lat, coords.lon);
     return this.mapWeatherData(data, coords.lat, coords.lon, region);
   }
 
-  // ==================== GET WEATHER BY COORDINATES (GPS) ====================
   async getWeatherWithCache(lat: number, lon: number) {
     const data = await this.fetchOpenMeteoData(lat, lon);
     return this.mapWeatherData(data, lat, lon, 'My Current Location');
   }
 
-  // ==================== CROP-SPECIFIC ADVISORY ====================
+  // ==================== ADVISORY ====================
   private getCropAdvisory(current: any, forecast: any[]) {
     const advisories: string[] = [];
-
-    if (forecast[0] && forecast[0].rainChance > 0.6) {
-      advisories.push('🌧️ Rain expected today — do not spray pesticides or fertilizers');
-    }
-    if (forecast[0] && forecast[0].tempMin < 5) {
-      advisories.push('❄️ Frost risk tonight — cover sensitive crops');
-    }
-    if (current.temperature > 35) {
-      advisories.push('🔥 High heat — increase irrigation, avoid midday field work');
-    }
-    if (current.uvIndex > 8) {
-      advisories.push('☀️ Very high UV — protect workers and young plants');
-    }
-    if (current.humidity > 85) {
-      advisories.push('🍄 High humidity — monitor for fungal diseases');
-    }
-    if (current.windSpeed > 10) {
-      advisories.push('💨 Strong winds — secure structures and young trees');
-    }
+    if (forecast[0] && forecast[0].rainChance > 0.6) advisories.push('🌧️ Rain expected today — do not spray pesticides or fertilizers');
+    if (forecast[0] && forecast[0].tempMin < 5) advisories.push('❄️ Frost risk tonight — cover sensitive crops');
+    if (current.temperature > 35) advisories.push('🔥 High heat — increase irrigation, avoid midday field work');
+    if (current.uvIndex > 8) advisories.push('☀️ Very high UV — protect workers and young plants');
+    if (current.humidity > 85) advisories.push('🍄 High humidity — monitor for fungal diseases');
+    if (current.windSpeed > 10) advisories.push('💨 Strong winds — secure structures and young trees');
+    
     const dryDays = forecast.slice(0, 7).filter((d: any) => d.rainChance < 0.2).length;
-    if (dryDays >= 5) {
-      advisories.push('🏜️ Dry week ahead — plan irrigation carefully');
-    }
+    if (dryDays >= 5) advisories.push('🏜️ Dry week ahead — plan irrigation carefully');
 
     return advisories;
   }
