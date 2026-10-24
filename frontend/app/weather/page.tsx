@@ -9,27 +9,27 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
   Cloud, CloudRain, Sun, Wind, Droplets, Thermometer,
-  MapPin, AlertTriangle, Loader2, RefreshCw, Navigation
+  MapPin, Loader2, RefreshCw, Navigation
 } from 'lucide-react';
 
 interface WeatherData {
-  region?: string; // 👈 Add this line
+  region?: string;
   current: any;
   forecast: any[];
   alerts: any[];
   advisory: string[];
 }
 
-// ✅ Updated to specific agricultural cities
+// ✅ Removed parentheses to prevent URL encoding errors
 const CITIES = [
-  'Addis Ababa', 'Adama (Nazret)', 'Jimma', 'Hawassa', 'Bahir Dar',
+  'Addis Ababa', 'Adama', 'Jimma', 'Hawassa', 'Bahir Dar',
   'Gondar', 'Mekelle', 'Dire Dawa', 'Harar', 'Arba Minch',
-  'Bishoftu (Debre Zeit)', 'Nekemte', 'Asosa', 'Gambela', 'Semera'
+  'Bishoftu', 'Nekemte', 'Asosa', 'Gambela', 'Semera'
 ];
 
 export default function WeatherPage() {
   const { user } = useAuth();
-  const [selectedLocation, setSelectedLocation] = useState('Adama (Nazret)');
+  const [selectedLocation, setSelectedLocation] = useState('Adama');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -47,10 +47,12 @@ export default function WeatherPage() {
   };
 
   useEffect(() => {
-    fetchWeather(selectedLocation);
+    // ✅ Don't re-fetch if GPS was used
+    if (selectedLocation !== 'My Current Location') {
+      fetchWeather(selectedLocation);
+    }
   }, [selectedLocation]);
 
-  // ✅ GPS Location Handler
   const handleUseMyLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -62,11 +64,10 @@ export default function WeatherPage() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          // Fetch weather directly by coordinates
           const response = await api.get(`/weather/full?lat=${latitude}&lon=${longitude}`);
           setWeather({
             ...response.data,
-            region: 'My Current Location' // Override the name for display
+            region: 'My Current Location'
           });
           setSelectedLocation('My Current Location');
           toast.success('Location found!');
@@ -93,7 +94,7 @@ export default function WeatherPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4 max-w-4xl">
-          {/* Header */}
+          
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <div>
               <h1 className="text-3xl font-bold">Weather Advisory</h1>
@@ -114,7 +115,6 @@ export default function WeatherPage() {
             </div>
           </div>
 
-          {/* City Selector */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <label className="text-sm font-medium mb-2 flex items-center gap-2 text-gray-700">
@@ -129,6 +129,9 @@ export default function WeatherPage() {
                 {CITIES.map(r => (
                   <option key={r} value={r}>{r}</option>
                 ))}
+                {selectedLocation === 'My Current Location' && (
+                   <option value="My Current Location">My Current Location</option>
+                )}
               </select>
             </CardContent>
           </Card>
@@ -142,7 +145,6 @@ export default function WeatherPage() {
 
           {weather && !loading && (
             <>
-              {/* Current Weather */}
               <Card className="mb-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -193,7 +195,6 @@ export default function WeatherPage() {
                 </CardContent>
               </Card>
 
-              {/* Crop Advisory */}
               {weather.advisory && weather.advisory.length > 0 && (
                 <Card className="mb-6 border-yellow-200 bg-yellow-50">
                   <CardHeader className="pb-3">
@@ -212,7 +213,6 @@ export default function WeatherPage() {
                 </Card>
               )}
 
-              {/* 7-Day Forecast */}
               <Card className="border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle>7-Day Forecast</CardTitle>
