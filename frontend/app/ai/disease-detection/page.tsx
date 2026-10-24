@@ -1,61 +1,78 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { api } from '../../../lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import { 
-  Camera, 
   Upload, 
+  Image as ImageIcon, 
   Loader2, 
-  Leaf, 
-  AlertTriangle, 
-  CheckCircle,
-  RefreshCw,
-  Image,
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle,
+  Leaf,
+  Pill,
+  Shield,
   Info,
+  Sparkles,
   History
 } from 'lucide-react';
-import NextImage from 'next/image';  // ✅ Renamed to avoid conflict
-import Link from 'next/link';
-import { toast } from 'sonner';
+
+interface PredictionResult {
+  disease: string;
+  confidence: number;
+  treatment: string;
+  description: string;
+  prevention: string;
+  is_healthy: boolean;
+  is_uncertain?: boolean;
+  top_predictions?: Array<{ class: string; confidence: number }>;
+  model_type?: string;
+  model_confidence?: number;
+  id?: string;
+  timestamp?: string;
+  image_analyzed?: string;
+  detectionId?: string;
+  createdAt?: string;
+  imageUrl?: string;
+}
 
 export default function DiseaseDetectionPage() {
-  const router = useRouter();
   const { user } = useAuth();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [result, setResult] = useState<PredictionResult | null>(null);
+  const [history, setHistory] = useState<PredictionResult[]>([]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setResult(null);
     }
+  };
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File too large. Max size is 10MB');
-      return;
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+      setResult(null);
     }
-
-    setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setSelectedImage(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    setResult(null);
-    setError(null);
   };
 
   const handleDetect = async () => {
@@ -65,228 +82,323 @@ export default function DiseaseDetectionPage() {
     }
 
     setLoading(true);
-    setError(null);
-    const formData = new FormData();
-    formData.append('image', selectedFile);
+    setResult(null);
 
     try {
+      const formData = new FormData();
+      formData.append('image', selectedFile); // ✅ Fixed: 'image' matches backend
+
       const response = await api.post('/ai/detect-disease', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      // Backend returns: { detectionId, disease, confidence, isHealthy, treatment, description, prevention, imageUrl, createdAt }
+      const data = response.data;
       
-      setResult(response.data);
-      toast.success('Analysis complete!');
+      // Format for frontend display
+      const formattedResult: PredictionResult = {
+        disease: data.disease || 'Unknown',
+        confidence: data.confidence || 0,
+        treatment: data.treatment || 'N/A',
+        description: data.description || 'No description available',
+        prevention: data.prevention || 'No prevention information available',
+        is_healthy: data.isHealthy || false,
+        is_uncertain: data.confidence < 30,
+        id: data.detectionId,
+        timestamp: data.createdAt,
+        image_analyzed: selectedFile.name,
+        imageUrl: data.imageUrl,
+        detectionId: data.detectionId,
+        createdAt: data.createdAt,
+      };
+
+      setResult(formattedResult);
+      
+      // Add to history
+      setHistory(prev => [formattedResult, ...prev].slice(0, 10));
+
+      // Show appropriate toast
+      if (formattedResult.is_uncertain) {
+        toast.warning('⚠️ Uncertain result - please try a clearer image');
+      } else if (formattedResult.is_healthy) {
+        toast.success('✅ Plant appears healthy!');
+      } else {
+        toast.info(`🩺 Detected: ${formattedResult.disease}`);
+      }
     } catch (error: any) {
-      console.error('Detection failed:', error);
-      const message = error.response?.data?.message || 'Failed to analyze image';
-      setError(message);
-      toast.error(message);
+      console.error('Detection error:', error);
+      toast.error(error.response?.data?.message || 'Failed to detect disease');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setSelectedImage(null);
+  const resetDetection = () => {
     setSelectedFile(null);
+    setPreviewUrl(null);
     setResult(null);
-    setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
-  const formatConfidence = (value: number) => {
-    return `${Math.round(value)}%`;
-  };
-
-  const getConfidenceColor = (value: number) => {
-    if (value >= 80) return 'text-green-600';
-    if (value >= 60) return 'text-yellow-600';
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 70) return 'text-green-600';
+    if (confidence >= 50) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const getConfidenceBadge = (confidence: number) => {
+    if (confidence >= 70) return 'bg-green-100 text-green-700 border-green-200';
+    if (confidence >= 50) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    return 'bg-red-100 text-red-700 border-red-200';
   };
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-muted/30 py-8">
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Leaf className="h-8 w-8 text-primary" />
-                AI Crop Disease Detection
-              </h1>
-              <p className="text-muted-foreground">
-                Upload a photo of your crop to detect diseases and get treatment recommendations
-              </p>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="h-8 w-8 text-green-600" />
+              <h1 className="text-3xl font-bold text-gray-900">AI Crop Disease Detection</h1>
             </div>
-            <Link href="/ai/disease-detection/history">
-              <Button variant="outline">
-                <History className="h-4 w-4 mr-2" />
-                History
-              </Button>
-            </Link>
+            <p className="text-gray-600">
+              Upload a photo of a crop leaf and our AI will detect any diseases
+            </p>
           </div>
 
-          <div className="grid gap-6">
-            {!result ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Upload Crop Photo</CardTitle>
-                  <CardDescription>
-                    Take a clear photo of the affected plant for best results
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center gap-4">
-                    {selectedImage ? (
-                      <div className="relative w-full max-w-md mx-auto">
-                        <NextImage
-                          src={selectedImage}
-                          alt="Selected crop"
-                          width={400}
-                          height={400}
-                          className="rounded-lg object-cover w-full h-auto max-h-80"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={handleReset}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div 
-                        className="w-full max-w-md aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Camera className="h-12 w-12 text-muted-foreground mb-2" />
-                        <p className="text-muted-foreground text-center">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Supports JPG, PNG, WebP (max 10MB)
-                        </p>
-                      </div>
-                    )}
-                    
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
+          {/* Upload Section */}
+          <Card className="mb-6 border-0 shadow-lg">
+            <CardContent className="p-6">
+              {!previewUrl ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-green-500 transition-colors cursor-pointer"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 font-medium">Drop your image here, or click to browse</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Supports JPG, JPEG, PNG (Max 10MB)
+                  </p>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full max-h-96 object-contain rounded-lg border border-gray-200"
                     />
-
-                    {selectedImage && (
-                      <Button
-                        size="lg"
-                        className="w-full max-w-md bg-primary hover:bg-primary/90"
-                        onClick={handleDetect}
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Analyzing...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Detect Disease
-                          </>
-                        )}
-                      </Button>
-                    )}
-
-                    {error && (
-                      <div className="w-full max-w-md p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                        <AlertTriangle className="h-4 w-4 inline mr-2" />
-                        {error}
-                      </div>
-                    )}
+                    <button
+                      onClick={resetDetection}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    >
+                      <XCircle className="h-5 w-5" />
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-2 border-primary/20">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Detection Results</CardTitle>
-                    <Button variant="outline" size="sm" onClick={handleReset}>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      New Detection
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleDetect}
+                      disabled={loading}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Leaf className="h-4 w-4 mr-2" />
+                          Detect Disease
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={resetDetection}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                      New Image
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedImage && (
-                    <div className="flex justify-center">
-                      <NextImage
-                        src={selectedImage}
-                        alt="Analyzed crop"
-                        width={300}
-                        height={300}
-                        className="rounded-lg object-cover max-h-48"
-                      />
-                    </div>
-                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+          {/* Results Section */}
+          {result && (
+            <Card className="mb-6 border-0 shadow-lg">
+              <CardHeader className="border-b">
+                <CardTitle className="flex items-center gap-2">
+                  <span>Detection Results</span>
+                  {!result.is_uncertain && (
+                    <Badge variant="outline" className={getConfidenceBadge(result.confidence)}>
+                      {result.confidence.toFixed(1)}% confidence
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {result.image_analyzed && `Image: ${result.image_analyzed}`}
+                  {result.timestamp && ` • ${new Date(result.timestamp).toLocaleString()}`}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                {/* Disease Name */}
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500">Disease</h3>
+                  <p className={`text-2xl font-bold ${
+                    result.is_uncertain ? 'text-yellow-600' : 
+                    result.is_healthy ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {result.is_uncertain ? '⚠️ Uncertain' : result.disease}
+                  </p>
+                  {!result.is_uncertain && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Confidence: <span className={getConfidenceColor(result.confidence)}>
+                        {result.confidence.toFixed(1)}%
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Uncertain Warning */}
+                {result.is_uncertain && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Disease</p>
-                        <p className="text-2xl font-bold">{result.disease}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-muted-foreground">Confidence</p>
-                        <p className={`text-2xl font-bold ${getConfidenceColor(result.confidence)}`}>
-                          {formatConfidence(result.confidence)}
+                        <p className="text-yellow-800 font-medium">
+                          {result.disease}
+                        </p>
+                        <p className="text-sm text-yellow-700 mt-1">
+                          Confidence: {result.confidence.toFixed(1)}%
+                        </p>
+                        <p className="text-sm text-yellow-700 mt-2">
+                          {result.description}
                         </p>
                       </div>
                     </div>
+                  </div>
+                )}
 
-                    {result.isHealthy ? (
-                      <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
-                        <CheckCircle className="h-5 w-5" />
-                        <p>✓ Plant appears healthy!</p>
-                      </div>
+                {/* Healthy Status */}
+                {!result.is_uncertain && (
+                  <div className="flex items-center gap-2">
+                    {result.is_healthy ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <span className="text-green-700 font-medium">✅ Plant appears healthy</span>
+                      </>
                     ) : (
-                      <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700">
-                        <AlertTriangle className="h-5 w-5" />
-                        <p>⚠️ Disease detected. See recommendations below.</p>
-                      </div>
-                    )}
-
-                    {result.description && (
-                      <div className="p-3 bg-muted/30 rounded-lg">
-                        <p className="font-semibold">Description</p>
-                        <p className="text-muted-foreground">{result.description}</p>
-                      </div>
-                    )}
-
-                    {result.treatment && (
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="font-semibold text-green-800">💊 Treatment</p>
-                        <p className="text-green-700">{result.treatment}</p>
-                      </div>
-                    )}
-
-                    {result.prevention && (
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="font-semibold text-blue-800">🛡️ Prevention</p>
-                        <p className="text-blue-700">{result.prevention}</p>
-                      </div>
+                      <>
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                        <span className="text-red-700 font-medium">⚠️ Disease detected. See recommendations below.</span>
+                      </>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                )}
+
+                {/* Description */}
+                {!result.is_uncertain && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      Description
+                    </h3>
+                    <p className="text-gray-700 mt-1">{result.description}</p>
+                  </div>
+                )}
+
+                {/* Treatment */}
+                {!result.is_uncertain && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                      <Pill className="h-4 w-4" />
+                      Treatment
+                    </h3>
+                    <p className="text-gray-700 mt-1">{result.treatment}</p>
+                  </div>
+                )}
+
+                {/* Prevention */}
+                {!result.is_uncertain && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Prevention
+                    </h3>
+                    <p className="text-gray-700 mt-1">{result.prevention}</p>
+                  </div>
+                )}
+
+                {/* Model Info */}
+                <div className="text-xs text-gray-400 border-t pt-3">
+                  <p>Model: EfficientNet-B0</p>
+                  {result.detectionId && <p>Detection ID: {result.detectionId.slice(0, 8)}</p>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* History Section */}
+          {history.length > 0 && (
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Recent Detections
+                </CardTitle>
+                <CardDescription>Your last {history.length} detections</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {history.map((item, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        item.is_uncertain ? 'bg-yellow-50 border-yellow-200' :
+                        item.is_healthy ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.is_uncertain ? (
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                        ) : item.is_healthy ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-red-600" />
+                        )}
+                        <span className="font-medium">
+                          {item.is_uncertain ? 'Uncertain' : item.disease}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-gray-500">
+                          {item.confidence.toFixed(1)}%
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : ''}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </ProtectedRoute>

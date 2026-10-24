@@ -4,16 +4,15 @@ import { AiService } from './ai.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 
-// ✅ Use 'any' type to avoid Express.Multer issue
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
   constructor(private aiService: AiService) {}
 
   @Post('detect-disease')
-  @UseInterceptors(FileInterceptor('image', {
+  @UseInterceptors(FileInterceptor('image', {  // ✅ Matches frontend field name
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: 10 * 1024 * 1024, // 10MB
     },
   }))
   async detectDisease(

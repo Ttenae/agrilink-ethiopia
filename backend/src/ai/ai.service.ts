@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import FormData from 'form-data';  // ✅ Fixed: default import
+import FormData from 'form-data';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -17,8 +17,6 @@ export class AiService {
       fs.mkdirSync(this.UPLOAD_DIR, { recursive: true });
     }
   }
-
-  // ==================== DETECT DISEASE ====================
 
   async detectDisease(file: any, userId: string) {
     if (!file) {
@@ -43,7 +41,6 @@ export class AiService {
       const filePath = path.join(userUploadDir, filename);
       fs.writeFileSync(filePath, file.buffer);
 
-      // ✅ Fixed: FormData is now constructable with default import
       const formData = new FormData();
       formData.append('file', file.buffer, {
         filename: file.originalname,
@@ -101,8 +98,6 @@ export class AiService {
     }
   }
 
-  // ==================== GET DETECTION HISTORY ====================
-
   async getDetectionHistory(userId: string) {
     return (this.prisma as any).diseaseDetection.findMany({
       where: { userId },
@@ -120,8 +115,6 @@ export class AiService {
     });
   }
 
-  // ==================== GET SINGLE DETECTION ====================
-
   async getDetectionResult(id: string, userId: string) {
     const result = await (this.prisma as any).diseaseDetection.findUnique({
       where: { id },
@@ -138,8 +131,6 @@ export class AiService {
     return result;
   }
 
-  // ==================== GET DISEASE LIST ====================
-
   async getDiseaseList() {
     return [
       'Late Blight',
@@ -149,8 +140,6 @@ export class AiService {
       'Healthy',
     ];
   }
-
-  // ==================== GET DISEASE INFO ====================
 
   async getDiseaseInfo(name: string) {
     const diseaseInfo: Record<string, any> = {
@@ -193,8 +182,6 @@ export class AiService {
 
     return info;
   }
-
-  // ==================== DELETE DETECTION ====================
 
   async deleteDetection(id: string, userId: string) {
     const result = await (this.prisma as any).diseaseDetection.findUnique({
