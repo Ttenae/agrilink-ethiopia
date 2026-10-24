@@ -245,6 +245,15 @@ model DiseaseDetection {
   updatedAt   DateTime @updatedAt
 }
 
+model WeatherCache {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  latitude    Float
+  longitude   Float
+  data        Json
+  fetchedAt   DateTime @default(now())
+  
+  @@index([latitude, longitude])
+}
 // ==================== ENUMS ====================
 
 enum Role {
