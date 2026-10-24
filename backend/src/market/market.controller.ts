@@ -19,8 +19,8 @@ export class MarketController {
     return this.marketService.getPriceHistory(commodity);
   }
 
-  @Post('scrape')
+    @Post('scrape')
   async triggerScrape() {
-    return this.marketService.seedRealisticData();
+    return this.marketService.seedHighDensityData(); // ✅ Changed to the new function name
   }
 }
