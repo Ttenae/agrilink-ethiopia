@@ -25,6 +25,8 @@ import { AiModule } from './ai/ai.module';
 // ✅ Weather module (NEW)
 import { WeatherModule } from './weather/weather.module';
 
+import { MarketModule } from './market/market.module'; 
+
 // Controllers
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -69,6 +71,8 @@ import { AppService } from './app.service';
 
     // ✅ Weather (NEW — this enables /api/weather/* routes)
     WeatherModule,
+
+    MarketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

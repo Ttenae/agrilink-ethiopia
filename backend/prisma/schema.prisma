@@ -254,6 +254,20 @@ model WeatherCache {
   
   @@index([latitude, longitude])
 }
+
+model MarketPrice {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  commodity   String   // e.g., "Coffee", "Maize", "Sesame"
+  market      String   // e.g., "Addis Ababa", "Dire Dawa"
+  price       Float    // Price in ETB
+  unit        String   // e.g., "Quintal", "Feresula"
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([commodity, date])
+}
+
+
 // ==================== ENUMS ====================
 
 enum Role {
