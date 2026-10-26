@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { api } from '../lib/api/client';
 
 interface AuthContextType {
@@ -20,30 +20,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      if (storedToken && storedUser) {
+        // 1. Instantly restore from localStorage (optimistic update)
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        
+        // 2. Fetch fresh data from backend
+        try {
+          const res = await api.get('/users/me');
+          setUser(res.data);
+          localStorage.setItem('user', JSON.stringify(res.data));
+        } catch (error) {
+          // Token is invalid/expired
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+          if (pathname !== '/auth/login') {
+            router.push('/auth/login');
+          }
+        }
+      }
       
-      api.get('/users/me').then(res => {
-        setUser(res.data);
-        localStorage.setItem('user', JSON.stringify(res.data));
-      }).catch(() => {
-        logout();
-      });
-    }
-    setLoading(false);
-  }, []);
+      // ✅ ONLY set loading to false AFTER the API check is done
+      setLoading(false); 
+    };
 
-  // ✅ FIXED: Login now makes the API call itself
+    initAuth();
+  }, []); // Run once on mount
+
   const login = async (phone: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { phone, password });
-      
       const { token, user: userData } = response.data;
       
       setToken(token);
@@ -51,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error: any) {
-      // Throw error so the LoginPage can catch it and show the red box
       throw error;
     }
   };

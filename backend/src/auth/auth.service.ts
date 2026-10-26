@@ -92,6 +92,7 @@ export class AuthService {
         phone: user.phone,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl, // ✅ Added this
       },
     };
   }
@@ -124,6 +125,7 @@ export class AuthService {
         phone: user.phone,
         email: user.email,
         role: user.role,
+        avatarUrl: user.avatarUrl, // ✅ Added this
       },
     };
   }
