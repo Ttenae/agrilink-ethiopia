@@ -13,10 +13,36 @@ export class ChatbotService {
     private weatherService: WeatherService,
   ) {}
 
+  // ✅ Mathematical Typo Checker (Levenshtein Distance)
+  private isCloseEnough(word1: string, word2: string): boolean {
+    if (word1 === word2) return true;
+    if (Math.abs(word1.length - word2.length) > 2) return false;
+
+    let differences = 0;
+    let i = 0, j = 0;
+
+    while (i < word1.length && j < word2.length) {
+      if (word1[i] !== word2[j]) {
+        differences++;
+        if (word1.length > word2.length) i++;
+        else if (word1.length < word2.length) j++;
+        else { i++; j++; }
+      } else {
+        i++; j++;
+      }
+      if (differences > 2) return false; // Max 2 typos allowed
+    }
+    return true;
+  }
+
+  private hasWord(text: string, keywords: string[]): boolean {
+    const words = text.split(' ');
+    return words.some(word => keywords.some(keyword => this.isCloseEnough(word, keyword)));
+  }
+
   async handleMessage(userId: string, message: string, lang: string) {
-    const lowerMsg = message.toLowerCase();
+    const lowerMsg = message.toLowerCase().replace(/[.,?!]/g, '').trim();
     
-    // 1. Save User Message
     await this.prisma.chatMessage.create({
       data: { userId, role: 'user', content: message, language: lang },
     });
@@ -24,14 +50,25 @@ export class ChatbotService {
     let reply = '';
 
     try {
-      // --- WEATHER INTENT ---
-      if (lowerMsg.includes('weather') || lowerMsg.includes('haala qilleensaa')) {
-        // Check if they asked for a specific city
+      // 1. WEATHER
+      if (this.hasWord(lowerMsg, ['weather', 'wheater', 'wether', 'qilleensa', 'qileensa'])) {
         let city = 'Addis Ababa';
-        if (lowerMsg.includes('oromia') || lowerMsg.includes('adama')) city = 'Adama';
-        else if (lowerMsg.includes('jimma')) city = 'Jimma';
-        else if (lowerMsg.includes('hawassa')) city = 'Hawassa';
-        else if (lowerMsg.includes('bahir dar')) city = 'Bahir Dar';
+        
+        // ✅ All cities mapped with their correct English spelling
+        if (this.hasWord(lowerMsg, ['adama', 'adaama'])) city = 'Adama';
+        else if (this.hasWord(lowerMsg, ['jimma', 'jima'])) city = 'Jimma';
+        else if (this.hasWord(lowerMsg, ['hawassa', 'hawasa'])) city = 'Hawassa';
+        else if (this.hasWord(lowerMsg, ['bahir', 'bahirdar'])) city = 'Bahir Dar';
+        else if (this.hasWord(lowerMsg, ['gondar', 'gonda'])) city = 'Gondar';
+        else if (this.hasWord(lowerMsg, ['mekelle', 'mekele'])) city = 'Mekelle';
+        else if (this.hasWord(lowerMsg, ['dire', 'diredawa'])) city = 'Dire Dawa';
+        else if (this.hasWord(lowerMsg, ['harar', 'hara'])) city = 'Harar';
+        else if (this.hasWord(lowerMsg, ['arba', 'arbaminch'])) city = 'Arba Minch';
+        else if (this.hasWord(lowerMsg, ['bishof', 'bishoftu'])) city = 'Bishoftu';
+        else if (this.hasWord(lowerMsg, ['nekemte', 'nekemt'])) city = 'Nekemte';
+        else if (this.hasWord(lowerMsg, ['asosa', 'asos', 'asoosaa'])) city = 'Asosa'; // ✅ Handles asoosaa
+        else if (this.hasWord(lowerMsg, ['gambela', 'gambella', 'gambel'])) city = 'Gambela';
+        else if (this.hasWord(lowerMsg, ['semera', 'semerra'])) city = 'Semera';
 
         const weather = await this.weatherService.getWeatherByRegion(city);
         const temp = Math.round(weather.current.temperature);
@@ -39,44 +76,50 @@ export class ChatbotService {
         if (lang === 'om') reply = `Haalli qilleensaa ammaa ${city} keessatti: ${temp}°C. Haala: ${weather.current.condition}.`;
         else reply = `Current weather in ${city}: ${temp}°C, ${weather.current.condition}.`;
       } 
-      
-      // --- MARKET INTENT ---
-      else if (lowerMsg.includes('price') || lowerMsg.includes('market') || lowerMsg.includes('cost') || lowerMsg.includes('gatii')) {
+
+      // 2. MARKET
+      else if (this.hasWord(lowerMsg, ['price', 'market', 'cost', 'gatiin', 'gatii', 'gattin'])) {
         const prices = await this.marketService.getLatestPrices();
         
-        // ✅ Smart Crop Detection
-        let requestedCrop = 'Coffee'; // Default
-        if (lowerMsg.includes('maize') || lowerMsg.includes('corn') || lowerMsg.includes('bofa')) requestedCrop = 'Maize';
-        else if (lowerMsg.includes('wheat') || lowerMsg.includes('qamadii')) requestedCrop = 'Wheat';
-        else if (lowerMsg.includes('teff') || lowerMsg.includes('xaaﬁi')) requestedCrop = 'Teff';
-        else if (lowerMsg.includes('sesame') || lowerMsg.includes('salixa')) requestedCrop = 'Sesame';
+        let requestedCrop = 'Coffee';
+        let displayCropOm = 'Buna';
+
+        if (this.hasWord(lowerMsg, ['maize', 'corn', 'boqqolloo', 'boqoloo'])) {
+          requestedCrop = 'Maize'; displayCropOm = 'Boqqolloo';
+        }
+        else if (this.hasWord(lowerMsg, ['wheat', 'qamadii', 'qamadi'])) {
+          requestedCrop = 'Wheat'; displayCropOm = 'Qamadii';
+        }
+        else if (this.hasWord(lowerMsg, ['teff', 'xaafii', 'xafii'])) {
+          requestedCrop = 'Teff'; displayCropOm = 'Xaafii';
+        }
+        else if (this.hasWord(lowerMsg, ['sesame', 'salixa'])) {
+          requestedCrop = 'Sesame'; displayCropOm = 'Salixa';
+        }
+        else if (this.hasWord(lowerMsg, ['coffee', 'buna'])) {
+          requestedCrop = 'Coffee'; displayCropOm = 'Buna';
+        }
 
         const cropData = prices.find(p => p.commodity.toLowerCase() === requestedCrop.toLowerCase());
         const priceStr = cropData ? cropData.price.toLocaleString() : 'unavailable';
         
-        if (lang === 'om') reply = `Gatiin ${requestedCrop} yeroo ammaa kuintaalitti qarshii ${priceStr} ETB dha.`;
+        if (lang === 'om') reply = `Gatiin ${displayCropOm} yeroo ammaa kuintaalitti qarshii ${priceStr} ETB dha.`;
         else reply = `The current price of ${requestedCrop} is ${priceStr} ETB per Quintal.`;
       } 
       
-      // --- DISEASE INTENT ---
-      else if (lowerMsg.includes('disease') || lowerMsg.includes('sick') || lowerMsg.includes('dhukkuba') || lowerMsg.includes('crop')) {
-        if (lang === 'om') reply = 'Maaloo suuraa baala dhukkubsate "AI Detection" fuula irratti ol kaa\'aa. Nuti dhukkuba sana beekna.';
-        else reply = 'Please upload a photo of the sick leaf on the "AI Detection" page. We will identify the disease.';
+      // 3. DISEASE
+      else if (this.hasWord(lowerMsg, ['disease', 'sick', 'dhukkuba', 'dukkuba', 'crop'])) {
+        if (lang === 'om') reply = 'Maaloo suuraa baala dhukkubsate "AI Detection" fuula irratti ol kaa\'aa.';
+        else reply = 'Please upload a photo of the sick leaf on the "AI Detection" page.';
       } 
-      
-      // --- GREETING ---
-      else if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey') || lowerMsg.includes('akkam')) {
+
+      // 4. GREETINGS
+      else if (this.hasWord(lowerMsg, ['hello', 'hi', 'hey', 'akkam', 'akam', 'salam', 'selam'])) {
         if (lang === 'om') reply = 'Akkam! Baga nagaan dhuftan. Har\'a maal si gargaaruu danda\'a?';
         else reply = 'Hello! Welcome. How can I help you today?';
       }
 
-      // --- HOW ARE YOU ---
-      else if (lowerMsg.includes('how are you') || lowerMsg.includes('akkam jirta')) {
-        if (lang === 'om') reply = 'Ani gaarii dha, galatoomi! Ati hoo? Har\'a maal si gargaaruu danda\'a?';
-        else reply = 'I am doing great, thank you! How are you? How can I help you today?';
-      }
-
-      // --- FALLBACK ---
+      // 5. FALLBACK
       else {
         if (lang === 'om') reply = 'Dhiifama, kana hin hubanne. Waa\'ee gatii, haala qilleensaa yookaan dhukkubaa gaafachuu dandeessu.';
         else reply = 'Sorry, I didn\'t understand that. You can ask about prices, weather, or crop diseases.';
@@ -84,15 +127,19 @@ export class ChatbotService {
 
     } catch (error) {
       this.logger.error(`Chatbot error: ${error.message}`);
-      reply = lang === 'om' ? 'Dhiifama, dogoggorri uumameera. Maaloo booda yaalaa.' : 'Sorry, an error occurred. Please try again later.';
+      reply = 'Sorry, an error occurred.';
     }
 
-    // 2. Save Assistant Message
     const savedReply = await this.prisma.chatMessage.create({
       data: { userId, role: 'assistant', content: reply, language: lang },
     });
 
     return savedReply;
+  }
+
+  async clearHistory(userId: string) {
+    await this.prisma.chatMessage.deleteMany({ where: { userId } });
+    return { success: true };
   }
 
   async getHistory(userId: string) {

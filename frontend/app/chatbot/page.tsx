@@ -4,9 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { ProtectedRoute } from '../../components/ProtectedRoute';
 import { api } from '../../lib/api/client';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Send, Bot, User as UserIcon, Loader2, Globe } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Loader2, Globe, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Message {
@@ -21,18 +20,17 @@ export default function ChatbotPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [lang, setLang] = useState<'en' | 'am' | 'om'>('en');
+  const [lang, setLang] = useState<'en' | 'om'>('en');
   const [loading, setLoading] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Fetch History
   useEffect(() => {
     api.get('/chatbot/history').then((res) => {
       setMessages(res.data);
     }).catch(() => toast.error('Failed to load chat history'));
   }, []);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -66,6 +64,21 @@ export default function ChatbotPage() {
     }
   };
 
+  const handleClearHistory = async () => {
+    if (!confirm('Are you sure you want to clear your chat history?')) return;
+    
+    setClearing(true);
+    try {
+      await api.delete('/chatbot/history');
+      setMessages([]);
+      toast.success('Chat history cleared');
+    } catch (err) {
+      toast.error('Failed to clear history');
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 flex flex-col items-center py-8">
@@ -83,18 +96,31 @@ export default function ChatbotPage() {
               </div>
             </div>
             
-            {/* Language Selector */}
-            <div className="flex items-center gap-2 bg-green-700/50 rounded-lg p-1">
-              <Globe className="h-4 w-4 ml-1 text-green-200" />
-              <select
-                value={lang}
-                onChange={(e) => setLang(e.target.value as any)}
-                className="bg-transparent text-white text-sm outline-none cursor-pointer pr-2"
+            <div className="flex items-center gap-4">
+              {/* ✅ TEXT BUTTON for Clear History */}
+              <button 
+                onClick={handleClearHistory}
+                disabled={clearing || messages.length === 0}
+                className="flex items-center gap-1 text-sm font-medium text-white/90 hover:text-white disabled:opacity-50 transition-colors"
               >
-                <option value="en" className="text-black">English</option>
+                {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Clear History
+              </button>
 
-                <option value="om" className="text-black">Afaan Oromoo</option>
-              </select>
+              <div className="h-4 w-px bg-white/30"></div>
+
+              {/* Language Selector */}
+              <div className="flex items-center gap-2 bg-green-700/50 rounded-lg p-1">
+                <Globe className="h-4 w-4 ml-1 text-green-200" />
+                <select
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value as any)}
+                  className="bg-transparent text-white text-sm outline-none cursor-pointer pr-2"
+                >
+                  <option value="en" className="text-black">English</option>
+                  <option value="om" className="text-black">Afaan Oromoo</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -111,14 +137,12 @@ export default function ChatbotPage() {
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   
-                  {/* Avatar */}
                   <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                     msg.role === 'user' ? 'bg-gray-200 text-gray-600' : 'bg-green-100 text-green-600'
                   }`}>
                     {msg.role === 'user' ? <UserIcon className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                   </div>
                   
-                  {/* Bubble */}
                   <div className={`p-3 rounded-2xl text-sm ${
                     msg.role === 'user' 
                       ? 'bg-green-600 text-white rounded-tr-none' 
@@ -153,11 +177,7 @@ export default function ChatbotPage() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                lang === 'am' ? 'መልእክትዎን ይጻፉ...' : 
-                lang === 'om' ? 'Ergaa keessan barreessaa...' : 
-                'Type a message...'
-              }
+              placeholder={lang === 'om' ? 'Ergaa keessan barreessaa...' : 'Type a message...'}
               className="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/50"
             />
             <Button type="submit" disabled={!input.trim() || loading} className="h-11 w-11 rounded-full bg-green-600 hover:bg-green-700 p-0 flex-shrink-0">
