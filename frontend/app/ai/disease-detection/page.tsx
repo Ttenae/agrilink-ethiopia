@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { api } from '../../../lib/api/client';
@@ -49,6 +49,18 @@ export default function DiseaseDetectionPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [history, setHistory] = useState<PredictionResult[]>([]);
+
+  // ✅ PROTECT PAGE: Only allow Farmers
+  useEffect(() => {
+    if (user && user.role !== 'FARMER') {
+      toast.error('AI Detection is only available for Farmers');
+      window.location.href = '/dashboard';
+    }
+  }, [user]);
+
+  if (user && user.role !== 'FARMER') {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">Redirecting to dashboard...</div>;
+  }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

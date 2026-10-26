@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Leaf, LogIn, ArrowLeft } from 'lucide-react';
+import { Leaf, LogIn, ArrowLeft, AlertCircle } from 'lucide-react'; // ✅ Added AlertCircle
 import { toast } from 'sonner';
 
 export default function LoginPage() {
@@ -17,17 +17,24 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null); // ✅ Added error state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg(null); // Reset error on new attempt
 
     try {
       await login(phone, password);
       toast.success('Welcome back!');
       router.push('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Invalid credentials. Please try again.');
+      // ✅ Catch the error and show message instead of redirecting
+      if (err.response?.status === 401 || err.response?.data?.message === 'Invalid credentials') {
+        setErrorMsg('Invalid phone number or password. Please check your credentials.');
+      } else {
+        setErrorMsg(err.response?.data?.message || 'Failed to login. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,6 +54,15 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            
+            {/* ✅ Display the error message */}
+            {errorMsg && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-start gap-2 border border-red-100">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <p>{errorMsg}</p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input

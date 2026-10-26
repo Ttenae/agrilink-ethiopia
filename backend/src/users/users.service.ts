@@ -5,15 +5,33 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  // ... your existing functions (findOne, findAll, etc) ...
+  // ✅ RESTORED: This fetches the user for the Profile Page
+  async findOne(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        farmerProfile: true,
+        buyerProfile: true,
+        transporterProfile: true,
+      },
+    });
 
-  // ✅ ADD THIS NEW FUNCTION
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Remove password hash from the response for security
+    const { passwordHash, ...result } = user;
+    return result;
+  }
+
+  // ✅ NEW: Updates the profile
   async updateProfile(userId: string, data: any) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
     // 1. Update base user details
-    const updatedUser = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id: userId },
       data: {
         name: data.name,
@@ -59,6 +77,6 @@ export class UsersService {
       });
     }
 
-    return { message: 'Profile updated successfully' };
+    return this.findOne(userId); // Return the updated user
   }
 }
