@@ -35,6 +35,7 @@ model User {
   paymentIntents PaymentIntent[]
   diseaseDetections DiseaseDetection[]  // ✅ ADDED
    chatMessages      ChatMessage[]
+   avatarUrl     String? 
 }
 
 model FarmerProfile {
