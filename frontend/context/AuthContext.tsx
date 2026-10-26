@@ -1,14 +1,17 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { api } from '../lib/api/client';
+import { io, Socket } from 'socket.io-client';
 
 interface AuthContextType {
   user: any;
   token: string | null;
   loading: boolean;
+  socket: Socket | null; // ✅ Add global socket
   login: (phone: string, password: string) => Promise<void>;
+  register: (data: any) => Promise<void>;
   logout: () => void;
   updateUser: (data: any) => void;
 }
@@ -19,8 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -28,39 +31,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedUser = localStorage.getItem('user');
 
       if (storedToken && storedUser) {
-        // 1. Instantly restore from localStorage (optimistic update)
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
         
-        // 2. Fetch fresh data from backend
         try {
           const res = await api.get('/users/me');
           setUser(res.data);
           localStorage.setItem('user', JSON.stringify(res.data));
         } catch (error) {
-          // Token is invalid/expired
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setToken(null);
           setUser(null);
-          if (pathname !== '/auth/login') {
-            router.push('/auth/login');
-          }
         }
       }
-      
-      // ✅ ONLY set loading to false AFTER the API check is done
-      setLoading(false); 
+      setLoading(false);
     };
 
     initAuth();
-  }, []); // Run once on mount
+  }, []);
+
+  // ✅ Initialize Global Socket when token exists
+  useEffect(() => {
+    if (token && user) {
+      const newSocket = io('http://localhost:3005/chat', {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+      });
+      setSocket(newSocket);
+
+      return () => {
+        newSocket.disconnect();
+      };
+    }
+  }, [token, user?.id]);
 
   const login = async (phone: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { phone, password });
       const { token, user: userData } = response.data;
-      
+      setToken(token);
+      setUser(userData);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const register = async (data: any) => {
+    try {
+      const response = await api.post('/auth/register', data);
+      const { token, user: userData } = response.data;
       setToken(token);
       setUser(userData);
       localStorage.setItem('token', token);
@@ -71,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (socket) socket.disconnect();
+    setSocket(null);
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
@@ -87,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, token, loading, socket, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

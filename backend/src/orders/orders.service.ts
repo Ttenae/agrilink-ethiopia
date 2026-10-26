@@ -80,6 +80,16 @@ export class OrdersService {
         },
       });
 
+      // ✅ Add Notification for Farmer (WITHOUT EMOJIS)
+      await tx.notification.create({
+        data: {
+          userId: product.farmerId,
+          title: 'New Order Received', // ✅ Removed emoji
+          message: `${newOrder.buyer.name} placed an order for ${dto.quantity} ${product.unit} of ${product.name}.`,
+          type: 'ORDER',
+        },
+      });
+
       return newOrder;
     });
 
@@ -417,6 +427,28 @@ export class OrdersService {
       await this.restoreProductQuantity(id);
     }
 
+    // ✅ Create Notifications based on status change (WITHOUT EMOJIS)
+    if (dto.status === 'ACCEPTED') {
+      await this.prisma.notification.create({
+        data: {
+          userId: order.buyerId,
+          title: 'Order Accepted', // ✅ Removed emoji
+          message: `Your order for ${order.product.name} has been accepted by the farmer.`,
+          type: 'ORDER',
+        },
+      });
+    } else if (dto.status === 'REJECTED' || dto.status === 'CANCELLED') {
+      const notifyId = role === 'BUYER' ? order.farmerId : order.buyerId;
+      await this.prisma.notification.create({
+        data: {
+          userId: notifyId,
+          title: 'Order Cancelled', // ✅ Removed emoji
+          message: `The order for ${order.product.name} has been ${dto.status.toLowerCase()}.`,
+          type: 'ORDER',
+        },
+      });
+    }
+
     // Update order
     const updatedOrder = await this.prisma.order.update({
       where: { id },
@@ -597,7 +629,7 @@ export class OrdersService {
       throw new NotFoundException('Transporter not found');
     }
 
-    return this.prisma.order.update({
+    const updatedOrder = await this.prisma.order.update({
       where: { id: orderId },
       data: {
         transporterId: transporter.userId,
@@ -621,6 +653,28 @@ export class OrdersService {
         product: { select: { name: true, unit: true, price: true, location: true } },
       },
     });
+
+    // ✅ Create Notification for Transporter (WITHOUT EMOJIS)
+    await this.prisma.notification.create({
+      data: {
+        userId: transporterId,
+        title: 'New Delivery Assigned', // ✅ Removed emoji
+        message: `You have been assigned to deliver ${updatedOrder.product.name} to the buyer.`,
+        type: 'DELIVERY',
+      },
+    });
+
+    // ✅ Create Notification for Buyer (WITHOUT EMOJIS)
+    await this.prisma.notification.create({
+      data: {
+        userId: order.buyerId,
+        title: 'Transporter Assigned', // ✅ Removed emoji
+        message: `A transporter has been assigned to deliver your order for ${updatedOrder.product.name}.`,
+        type: 'DELIVERY',
+      },
+    });
+
+    return updatedOrder;
   }
 
   // ==================== UPDATE DELIVERY STATUS ====================
@@ -688,6 +742,18 @@ export class OrdersService {
         },
       },
     });
+
+    // ✅ Create Notification for Buyer on Delivery (WITHOUT EMOJIS)
+    if (status === 'DELIVERED') {
+      await this.prisma.notification.create({
+        data: {
+          userId: order.buyerId,
+          title: 'Order Delivered', // ✅ Removed emoji
+          message: `Your order for ${updatedOrder.product.name} has been delivered successfully!`,
+          type: 'DELIVERY',
+        },
+      });
+    }
 
     return updatedOrder;
   }

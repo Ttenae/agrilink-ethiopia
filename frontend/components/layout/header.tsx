@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api/client';
 import { 
   Sprout, LogOut, User as UserIcon, Bell, Search, Menu, X, 
   Loader2, ChevronDown, Package, ShoppingBag, BarChart3, 
@@ -11,18 +12,37 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, logout, loading } = useAuth();
+  // ✅ Use the global socket from AuthContext
+  const { user, socket, logout, loading } = useAuth(); 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // 1. SHOW LOADING STATE
+  // ✅ Fetch initial unread count on login
+  useEffect(() => {
+    if (user) {
+      api.get('/notifications/unread-count')
+        .then(res => setUnreadCount(res.data.count))
+        .catch(() => setUnreadCount(0));
+    }
+  }, [user]);
+
+  // ✅ Listen to the global socket for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUnread = (count: number) => setUnreadCount(count);
+    socket.on('unread-count', handleUnread);
+
+    return () => {
+      socket.off('unread-count', handleUnread);
+    };
+  }, [socket]);
+
   if (loading) {
     return (
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -39,7 +59,6 @@ export default function Header() {
     );
   }
 
-  // 2. GUEST VIEW
   if (!user) {
     return (
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
@@ -59,14 +78,12 @@ export default function Header() {
     );
   }
 
-  // 3. LOGGED IN VIEW
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
-        {/* Logo & Mobile Toggle */}
         <div className="flex items-center gap-3">
           <button className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-md" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -79,13 +96,11 @@ export default function Header() {
           </Link>
         </div>
 
-        {/* Desktop Navigation (Grouped) */}
         <nav className="hidden md:flex md:items-center md:space-x-1">
           <Link href="/dashboard" className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${isActive('/dashboard') ? 'text-green-700 bg-green-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
             Dashboard
           </Link>
 
-          {/* Marketplace Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors outline-none ${(isActive('/products') || isActive('/market')) ? 'text-green-700 bg-green-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
               Marketplace <ChevronDown className="h-4 w-4" />
@@ -93,21 +108,15 @@ export default function Header() {
             <DropdownMenuContent align="start" className="w-48">
               {user.role === 'FARMER' ? (
                 <Link href="/products/my">
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <Package className="h-4 w-4" /> My Products
-                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2"><Package className="h-4 w-4" /> My Products</DropdownMenuItem>
                 </Link>
               ) : (
                 <Link href="/products">
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <ShoppingBag className="h-4 w-4" /> Browse Products
-                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2"><ShoppingBag className="h-4 w-4" /> Browse Products</DropdownMenuItem>
                 </Link>
               )}
               <Link href="/market">
-                <DropdownMenuItem className="cursor-pointer gap-2">
-                  <Activity className="h-4 w-4" /> Live Market
-                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer gap-2"><Activity className="h-4 w-4" /> Live Market</DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -116,7 +125,6 @@ export default function Header() {
             Weather
           </Link>
 
-          {/* Farmer-Only Tools Dropdown */}
           {user.role === 'FARMER' && (
             <DropdownMenu>
               <DropdownMenuTrigger className={`flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-md transition-colors outline-none ${(isActive('/analytics') || isActive('/ai')) ? 'text-green-700 bg-green-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}>
@@ -124,14 +132,10 @@ export default function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <Link href="/ai/disease-detection">
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <Stethoscope className="h-4 w-4" /> AI Detection
-                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2"><Stethoscope className="h-4 w-4" /> AI Detection</DropdownMenuItem>
                 </Link>
                 <Link href="/analytics">
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <BarChart3 className="h-4 w-4" /> Analytics
-                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer gap-2"><BarChart3 className="h-4 w-4" /> Analytics</DropdownMenuItem>
                 </Link>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -146,7 +150,6 @@ export default function Header() {
           </Link>
         </nav>
 
-        {/* Right Side: User Actions */}
         <div className="hidden md:flex items-center gap-2">
           <Link href="/products" className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors" title="Search">
             <Search className="h-4 w-4" />
@@ -154,7 +157,9 @@ export default function Header() {
           
           <Link href="/notifications" className="flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors relative" title="Notifications">
             <Bell className="h-4 w-4" />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 border border-white"></span>
+            )}
           </Link>
 
           <div className="h-6 w-px bg-gray-200 mx-1"></div>
@@ -179,7 +184,6 @@ export default function Header() {
           </Button>
         </div>
 
-        {/* Mobile Profile Icon */}
         <div className="md:hidden flex items-center">
            <Link href="/profile" className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 border border-green-200 text-green-700 overflow-hidden">
               {user?.avatarUrl ? (
@@ -191,7 +195,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile Navigation Dropdown */}
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-gray-200 bg-white shadow-lg absolute w-full max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col p-4 space-y-1">
@@ -215,6 +219,10 @@ export default function Header() {
 
             <Link href="/chatbot" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 mt-2 text-base font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Assistant</Link>
             <Link href="/chat" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 rounded-lg">Messages</Link>
+            <Link href="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 rounded-lg flex items-center justify-between">
+              Notifications
+              {unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>}
+            </Link>
 
             <div className="h-px bg-gray-200 my-2"></div>
             <button onClick={() => { logout(); setIsMobileMenuOpen(false); }} className="flex items-center gap-2 px-4 py-3 text-base font-medium text-red-600 hover:bg-red-50 rounded-lg w-full text-left">

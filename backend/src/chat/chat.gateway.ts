@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../prisma/prisma.service';
 
 @WebSocketGateway({
   cors: {
@@ -27,6 +28,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private chatService: ChatService,
     private jwtService: JwtService,
+    private prisma: PrismaService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -89,29 +91,52 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     try {
+      // 1. Save the message
       const message = await this.chatService.sendMessage(
         data.conversationId,
         data.senderId,
         data.content,
       );
 
-      // Get conversation to find participants
+      // 2. Get conversation to find participants
       const conversation = await this.chatService.getConversationWithParticipants(
         data.conversationId,
       );
 
-      // Get all participants
+      // ✅ 3. Correctly identify the receiver
+      let receiverId: string | null = null;
+      
+      if (conversation.buyerId === data.senderId) {
+        receiverId = conversation.farmerId;
+      } else if (conversation.farmerId === data.senderId) {
+        receiverId = conversation.buyerId;
+      } else if (conversation.transporterId === data.senderId) {
+        receiverId = conversation.buyerId || conversation.farmerId;
+      }
+
+      // 4. Save Notification for the receiver
+      if (receiverId) {
+        await this.prisma.notification.create({
+          data: {
+            userId: receiverId,
+            title: '💬 New Message',
+            message: `New message from ${message.sender.name}: "${data.content.substring(0, 30)}..."`,
+            type: 'MESSAGE',
+          },
+        });
+        console.log(`✅ Notification saved for user: ${receiverId}`);
+      }
+
+      // 5. Send message to the room
+      this.server.to(`conversation-${data.conversationId}`).emit('new-message', message);
+
+      // 6. Update unread counts for all participants
       const participants = [
         conversation.buyerId,
         conversation.farmerId,
         conversation.transporterId,
       ].filter(Boolean);
 
-      // Send to ALL participants including sender
-      // BUT the frontend will handle deduplication
-      this.server.to(`conversation-${data.conversationId}`).emit('new-message', message);
-
-      // Send unread count updates to all participants
       for (const participantId of participants) {
         const socketId = this.connectedUsers.get(participantId);
         if (socketId) {

@@ -34,8 +34,9 @@ model User {
   transactions Transaction[]
   paymentIntents PaymentIntent[]
   diseaseDetections DiseaseDetection[]  // ✅ ADDED
-   chatMessages      ChatMessage[]
-   avatarUrl     String? 
+  chatMessages      ChatMessage[]
+  notifications Notification[]
+  avatarUrl     String? 
 }
 
 model FarmerProfile {
@@ -175,6 +176,17 @@ model Message {
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   // e.g., "ORDER", "MESSAGE", "SYSTEM"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 // ==================== PAYMENT MODELS ====================
