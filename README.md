@@ -30,7 +30,30 @@ A full-stack agricultural marketplace with **AI crop disease detection**, a **li
 
 - [x] **GitHub Repository** — [Ttenae/agrilink-ethiopia](https://github.com/Ttenae/agrilink-ethiopia)
 - [x] **Video Presentation** — [5-minute demo](https://youtu.be/fNySjX4u9JQ)
+- [x] **Project Information** — see [Overview](#-overview) and [Features](#-features)
+- [x] **Author Information** — see [Author & Submission Info](#-author--submission-info)
+- [x] **Individual Project**
 
+---
+
+## 📑 Table of Contents
+
+- [Overview](#-overview)
+- [Video Presentation](#-video-presentation)
+- [Features](#-features)
+- [Architecture](#%EF%B8%8F-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Project Structure](#-project-structure)
+- [Key API Endpoints](#-key-api-endpoints)
+- [Database Models](#%EF%B8%8F-database-models)
+- [Testing the Flow](#-testing-the-flow)
+- [Known Limitations](#%EF%B8%8F-known-limitations)
+- [Roadmap](#%EF%B8%8F-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Author & Submission Info](#-author--submission-info)
+- [Acknowledgements](#-acknowledgements)
 
 ---
 
@@ -263,6 +286,8 @@ uvicorn main:app --reload --port 8000
 
 AI service runs at `http://localhost:8000`.
 
+> [!NOTE]
+> **Model file:** `ai-service/models/agrilink_model.pth` is ~600 MB and is **not tracked in Git** (excluded via `.gitignore`). Download it separately or retrain with `train.py`.
 
 ---
 
@@ -357,6 +382,8 @@ agrilink-ethiopia/
 | **ChatMessage** | Chatbot history |
 | **DiseaseDetection** | AI results |
 
+> [!WARNING]
+> **Emoji caveat:** If your PostgreSQL instance uses `WIN1252` encoding, emojis in DB strings will crash inserts. All notification strings in the backend are emoji-free for this reason. Frontend UI emojis are safe.
 
 ---
 
