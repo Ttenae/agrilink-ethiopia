@@ -452,9 +452,7 @@ Released under the **MIT License**.
 | **Full Name** | Tesfaye Tilahun |
 | **CTC ID** | ctc-3825-26 |
 | **GitHub** | [@Ttenae](https://github.com/Ttenae) |
-| **Institution** | [Your college/university] |
-| **Course** | [Course name] |
-| **Submitted** | [Month Year] |
+
 
 ---
 
