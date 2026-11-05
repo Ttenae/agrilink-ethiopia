@@ -19,7 +19,7 @@ A full-stack agricultural marketplace with **AI crop disease detection**, a **li
 <br />
 
 <a href="https://youtu.be/iyxZJGsCgwc">
-  <img src="https://img.youtube.com/vi/fNySjX4u9JQ/maxresdefault.jpg" alt="AgriLink Ethiopia — Demo Video" width="720" />
+  <img src="https://agrilinkafrica.com/wp-content/uploads/2025/04/temporary-Logo-Photoroom.png" alt="AgriLink Ethiopia — Demo Video" width="720" />
 </a>
 
 </div>
