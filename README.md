@@ -14,11 +14,11 @@ A full-stack agricultural marketplace with **AI crop disease detection**, a **li
 [![FastAPI](https://img.shields.io/badge/FastAPI-AI%20Service-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
 
-[**▶️ Watch the Demo**](https://youtu.be/fNySjX4u9JQ) · [**📂 Repository**](https://github.com/Ttenae/agrilink-ethiopia) · [**✨ Features**](#-features) · [**🚀 Getting Started**](#-getting-started)
+[**▶️ Watch the Demo**](https://youtu.be/iyxZJGsCgwc) · [**📂 Repository**](https://github.com/Ttenae/agrilink-ethiopia) · [**✨ Features**](#-features) · [**🚀 Getting Started**](#-getting-started)
 
 <br />
 
-<a href="https://youtu.be/fNySjX4u9JQ">
+<a href="https://youtu.be/iyxZJGsCgwc">
   <img src="https://img.youtube.com/vi/fNySjX4u9JQ/maxresdefault.jpg" alt="AgriLink Ethiopia — Demo Video" width="720" />
 </a>
 
@@ -29,7 +29,7 @@ A full-stack agricultural marketplace with **AI crop disease detection**, a **li
 ## 📋 Submission Checklist
 
 - [x] **GitHub Repository** — [Ttenae/agrilink-ethiopia](https://github.com/Ttenae/agrilink-ethiopia)
-- [x] **Video Presentation** — [5-minute demo](https://youtu.be/fNySjX4u9JQ)
+- [x] **Video Presentation** — [5-minute demo](https://youtu.be/iyxZJGsCgwc)
 - [x] **Project Information** — see [Overview](#-overview) and [Features](#-features)
 - [x] **Author Information** — see [Author & Submission Info](#-author--submission-info)
 - [x] **Individual Project**
@@ -78,7 +78,7 @@ On top of the marketplace, the platform adds:
 
 A 5-minute walkthrough of AgriLink Ethiopia — its purpose, key features, and a live demo.
 
-▶️ **[Watch the demo video](https://youtu.be/fNySjX4u9JQ)**
+▶️ **[Watch the demo video](https://youtu.be/iyxZJGsCgwc)**
 
 > **Covers:** marketplace flow · AI crop disease detection · live market terminal · multilingual assistant · real-time chat & notifications.
 
