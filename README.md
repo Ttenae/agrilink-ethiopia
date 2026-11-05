@@ -1,146 +1,231 @@
+<div align="center">
+
 # 🌾 AgriLink Ethiopia
 
-> A full-stack agricultural marketplace connecting Ethiopian farmers, buyers, and transporters — with AI-powered crop disease detection, live market prices, weather advisory, and a multilingual assistant.
+### Connecting Ethiopian farmers, buyers, and transporters — powered by AI
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org/)
-[![NestJS](https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs)](https://nestjs.com/)
-[![Prisma](https://img.shields.io/badge/Prisma-5-2d3748?logo=prisma)](https://www.prisma.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?logo=postgresql)](https://www.postgresql.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-EfficientNet--B0-ee4c2c?logo=pytorch)](https://pytorch.org/)
+A full-stack agricultural marketplace with **AI crop disease detection**, a **live market terminal**, **weather advisory**, and a **bilingual assistant** (English + Afaan Oromoo).
+
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![NestJS](https://img.shields.io/badge/NestJS-10-e0234e?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-5-2d3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-EfficientNet--B0-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-AI%20Service-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
+
+[**▶️ Watch the Demo**](https://youtu.be/fNySjX4u9JQ) · [**📂 Repository**](https://github.com/Ttenae/agrilink-ethiopia) · [**✨ Features**](#-features) · [**🚀 Getting Started**](#-getting-started)
+
+<br />
+
+<a href="https://youtu.be/fNySjX4u9JQ">
+  <img src="https://img.youtube.com/vi/fNySjX4u9JQ/maxresdefault.jpg" alt="AgriLink Ethiopia — Demo Video" width="720" />
+</a>
+
+</div>
+
+---
+
+## 📋 Submission Checklist
+
+- [x] **GitHub Repository** — [Ttenae/agrilink-ethiopia](https://github.com/Ttenae/agrilink-ethiopia)
+- [x] **Video Presentation** — [5-minute demo](https://youtu.be/fNySjX4u9JQ)
+- [x] **Project Information** — see [Overview](#-overview) and [Features](#-features)
+- [x] **Author Information** — see [Author & Submission Info](#-author--submission-info)
+- [x] **Individual Project**
+
+---
+
+## 📑 Table of Contents
+
+- [Overview](#-overview)
+- [Video Presentation](#-video-presentation)
+- [Features](#-features)
+- [Architecture](#%EF%B8%8F-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Project Structure](#-project-structure)
+- [Key API Endpoints](#-key-api-endpoints)
+- [Database Models](#%EF%B8%8F-database-models)
+- [Testing the Flow](#-testing-the-flow)
+- [Known Limitations](#%EF%B8%8F-known-limitations)
+- [Roadmap](#%EF%B8%8F-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Author & Submission Info](#-author--submission-info)
+- [Acknowledgements](#-acknowledgements)
 
 ---
 
 ## 📖 Overview
 
-AgriLink Ethiopia is a production-grade platform that digitizes the agricultural supply chain in Ethiopia. Farmers list produce, buyers place orders, transporters handle delivery, and payments flow through Chapa — all in one place. On top of the marketplace, an AI service detects 15 crop diseases from leaf photos, a live market terminal mirrors Ethiopian commodity prices, a weather advisory pulls hyper-local Open-Meteo data, and a bilingual chatbot answers questions in English and Afaan Oromoo.
+**AgriLink Ethiopia** is a production-grade platform that digitizes the agricultural supply chain in Ethiopia.
 
-**Repository:** [github.com/Ttenae/agrilink-ethiopia](https://github.com/Ttenae/agrilink-ethiopia)
+| 👩‍🌾 Farmers | 🛍️ Buyers | 🚚 Transporters |
+|:---:|:---:|:---:|
+| List produce with photos, prices, and locations | Browse, order, and pay through Chapa | Accept deliveries and update status |
+
+On top of the marketplace, the platform adds:
+
+- 🤖 an **AI service** that detects **15 crop diseases** from a single leaf photo,
+- 📈 a **live market terminal** that mirrors Ethiopian commodity prices,
+- 🌦️ a **weather advisory** with hyper-local **Open-Meteo** data,
+- 💬 a **bilingual chatbot** answering in English and Afaan Oromoo.
+
+---
+
+## 🎥 Video Presentation
+
+A 5-minute walkthrough of AgriLink Ethiopia — its purpose, key features, and a live demo.
+
+▶️ **[Watch the demo video](https://youtu.be/fNySjX4u9JQ)**
+
+> **Covers:** marketplace flow · AI crop disease detection · live market terminal · multilingual assistant · real-time chat & notifications.
 
 ---
 
 ## ✨ Features
 
-### 🛒 Marketplace
-- Role-based accounts: **Farmer**, **Buyer**, **Transporter**, **Admin**
-- Product listing with images, category, price, unit, location
-- Order lifecycle: `PENDING → ACCEPTED → COMPLETED` (with `REJECTED` / `CANCELLED`)
-- Chapa payment integration
-- Transporter assignment and delivery status tracking
-- Reviews & ratings with average score
+<details open>
+<summary><b>🛒 Marketplace</b></summary>
 
-### 🤖 AI Crop Disease Detection
+- Role-based accounts: **Farmer**, **Buyer**, **Transporter**, **Admin**
+- Product listing with images, category, price, unit, and location
+- Order lifecycle: `PENDING → ACCEPTED → COMPLETED` (plus `REJECTED` / `CANCELLED`)
+- **Chapa** payment integration
+- Transporter assignment and delivery status tracking
+- Reviews and ratings with average score
+
+</details>
+
+<details open>
+<summary><b>🤖 AI Crop Disease Detection</b></summary>
+
 - **15 disease classes** across Pepper, Potato, and Tomato
-- **96.49% accuracy** using **EfficientNet-B0**
-- Upload a leaf photo → disease name, confidence, description, treatment, prevention
+- **96.49% accuracy** using **EfficientNet-B0** (transfer learning)
+- Upload a leaf photo → disease name, confidence, description, treatment, and prevention
 - Full detection history stored per user
 
-### 📈 Market Terminal
+</details>
+
+<details open>
+<summary><b>📈 Market Terminal</b></summary>
+
 - Live Ethiopian commodity prices (Coffee, Maize, Sesame, Wheat, Teff) with a scrolling ticker tape
 - Watchlist with search, sorting (name / change / price), and favorites
-- Candlestick and line/area charts with toggleable **MA7 / MA25** and **RSI(14)** (overbought / oversold signal)
+- Candlestick and line/area charts with toggleable **MA7 / MA25** and **RSI(14)** overbought/oversold signal
 - OHLC legend that follows the crosshair, plus a volume panel
 - Timeframes: **1m, 5m, 15m, 1H, 1D**
-- Drag to pan, Ctrl/⌘ + scroll to zoom, reset zoom
-- Paper trading: buy/sell, limit and market orders, quick 25/50/75/100% sizing, fee preview
+- Drag to pan, **Ctrl/⌘ + scroll** to zoom, reset zoom
+- **Paper trading:** buy/sell, limit and market orders, quick 25/50/75/100% sizing, fee preview
 - Open orders (cancellable), order history, trade history, and holdings
 - Order book with spread and a live market-trades feed (both simulated)
 
-### 🌦️ Weather Advisory
+</details>
+
+<details open>
+<summary><b>🌦️ Weather Advisory</b></summary>
+
 - Live data from **Open-Meteo**
-- 15 Ethiopian cities (Addis Ababa, Adama, Jimma, Hawassa, Bahir Dar, Gondar, Mekelle, Dire Dawa, Harar, Arba Minch, Bishoftu, Nekemte, Asosa, Gambela, Semera)
+- **15 Ethiopian cities:** Addis Ababa, Adama, Jimma, Hawassa, Bahir Dar, Gondar, Mekelle, Dire Dawa, Harar, Arba Minch, Bishoftu, Nekemte, Asosa, Gambela, Semera
 - Temperature, condition, and forecast
 
-### 💬 Multilingual Assistant
+</details>
+
+<details open>
+<summary><b>💬 Multilingual Assistant</b></summary>
+
 - **English** and **Afaan Oromoo**
-- Understands typos via **Levenshtein distance** fuzzy matching
+- Handles typos via **Levenshtein distance** fuzzy matching
 - Answers about crop prices, weather, and disease guidance
 - Clearable chat history
 
-### 💌 Real-Time Chat
-- Socket.io-powered messaging between all roles
+</details>
+
+<details open>
+<summary><b>💌 Real-Time Chat</b></summary>
+
+- **Socket.io**-powered messaging between all roles
 - Searchable conversation list
 - New-chat dialog with user search
 - Unread badges and read receipts
 
-### 🔔 Real-Time Notifications
-- Created on: new order, order accepted, order delivered, order cancelled, transporter assigned, new chat message
-- Conditional red dot on the bell (only when unread > 0)
+</details>
+
+<details open>
+<summary><b>🔔 Real-Time Notifications</b></summary>
+
+- Triggered on: new order, order accepted, order delivered, order cancelled, transporter assigned, new chat message
+- Red dot on the bell only when unread > 0
 - Dedicated `/notifications` page with auto-mark-as-read
 
-### 👤 Profiles & Avatars
+</details>
+
+<details open>
+<summary><b>👤 Profiles & Avatars</b></summary>
+
 - Editable profile with role-specific fields
 - Avatar upload (served from `/uploads/avatars`)
 - Farmer verification badge
 - Stats: products, orders, rating, reviews
 
-### 🔐 Auth & Security
-- JWT + bcrypt, role-based guards
+</details>
+
+<details open>
+<summary><b>🔐 Auth & Security</b></summary>
+
+- **JWT + bcrypt** with role-based guards
 - Refresh-safe session (no logout on reload)
 - 401/403 interceptor with login-page exception
-- Rate-limited auth endpoints
+- Rate-limited auth endpoints (Throttler) and Helmet headers
+
+</details>
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
-│   Frontend       │─────▶│   Backend        │─────▶│   AI Service     │
-│   Next.js :3000  │◀────▶│   NestJS :3005   │      │   FastAPI :8000  │
-└──────────────────┘      └────────┬─────────┘      └──────────────────┘
-         │                         │
-         │ Socket.io               │ Prisma
-         ▼                         ▼
-┌──────────────────┐      ┌──────────────────┐
-│  Real-time Chat  │      │   PostgreSQL     │
-│  & Notifications │      │   :5432          │
-└──────────────────┘      └──────────────────┘
+```mermaid
+flowchart LR
+    FE["🖥️ Frontend<br/>Next.js :3000"]
+    BE["⚙️ Backend<br/>NestJS :3005"]
+    AI["🤖 AI Service<br/>FastAPI :8000"]
+    DB[("🗄️ PostgreSQL<br/>:5432")]
+    RT["⚡ Real-time Chat<br/>& Notifications<br/>(Socket.io)"]
+
+    FE -- REST --> BE
+    BE -- proxy --> AI
+    BE -- Prisma --> DB
+    BE <-- WebSocket --> RT
+    RT <-- WebSocket --> FE
 ```
 
 | Service | Technology | Port |
-|---|---|---|
-| Frontend | Next.js + Tailwind + shadcn/ui | 3000 |
-| Backend | NestJS + Prisma + PostgreSQL | 3005 |
-| AI Service | Python + FastAPI + PyTorch | 8000 |
+|---|---|:---:|
+| **Frontend** | Next.js + Tailwind + shadcn/ui | `3000` |
+| **Backend** | NestJS + Prisma + PostgreSQL | `3005` |
+| **AI Service** | Python + FastAPI + PyTorch | `8000` |
 
 ---
 
 ## 🧰 Tech Stack
 
-**Frontend**
-- Next.js (App Router), React, TypeScript
-- Tailwind CSS, shadcn/ui, lucide-react
-- Recharts (candlesticks, RSI, volume)
-- Socket.io-client
-- Sonner (toasts)
-
-**Backend**
-- NestJS, TypeScript
-- Prisma ORM, PostgreSQL 18
-- Passport JWT, bcrypt
-- Socket.io (WebSocket gateway)
-- Multer (file uploads)
-- Helmet, Throttler
-
-**AI Service**
-- Python, FastAPI
-- PyTorch, torchvision
-- EfficientNet-B0 (transfer learning)
-
-**Integrations**
-- Chapa (payments)
-- Open-Meteo (weather)
-- Yahoo Finance (optional market tickers)
+| Layer | Technologies |
+|---|---|
+| **Frontend** | Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui, lucide-react, Recharts, Socket.io-client, Sonner |
+| **Backend** | NestJS, TypeScript, Prisma ORM, PostgreSQL 18, Passport JWT, bcrypt, Socket.io, Multer, Helmet, Throttler |
+| **AI Service** | Python, FastAPI, PyTorch, torchvision, EfficientNet-B0 |
+| **Integrations** | Chapa (payments), Open-Meteo (weather), Yahoo Finance (optional market tickers) |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL 15+
-- Python 3.10+
+
+- Node.js **18+**
+- PostgreSQL **15+**
+- Python **3.10+**
 - npm or pnpm
 
 ### 1. Clone
@@ -201,13 +286,14 @@ uvicorn main:app --reload --port 8000
 
 AI service runs at `http://localhost:8000`.
 
-> **Note on the model file:** `ai-service/models/agrilink_model.pth` is ~600 MB and is **not** tracked in Git (excluded via `.gitignore`). Download it separately or retrain with `train.py`.
+> [!NOTE]
+> **Model file:** `ai-service/models/agrilink_model.pth` is ~600 MB and is **not tracked in Git** (excluded via `.gitignore`). Download it separately or retrain with `train.py`.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 agrilink-ethiopia/
 ├── backend/
 │   ├── prisma/
@@ -258,7 +344,7 @@ agrilink-ethiopia/
 ## 🔌 Key API Endpoints
 
 | Method | Endpoint | Description |
-|---|---|---|
+|:---:|---|---|
 | `POST` | `/api/auth/register` | Create account |
 | `POST` | `/api/auth/login` | Get JWT |
 | `GET` | `/api/users/me` | Current user profile |
@@ -279,36 +365,39 @@ agrilink-ethiopia/
 
 ---
 
-## 🗄️ Database Models (high level)
+## 🗄️ Database Models
 
-- **User** — role-based, `avatarUrl`, relations to all profile types
-- **FarmerProfile / BuyerProfile / TransporterProfile**
-- **Product** — listing with quantity, price, unit, image
-- **Order** — buyer, farmer, transporter, status, payment status
-- **Payment** — Chapa reference
-- **Commission** — 3% platform fee
-- **Review** — rating + comment
-- **Conversation / Message** — chat
-- **Notification** — `userId, title, message, type, isRead`
-- **MarketPrice** — commodity, price, date
-- **ChatMessage** — chatbot history
-- **DiseaseDetection** — AI results
+| Model | Purpose |
+|---|---|
+| **User** | Role-based account, `avatarUrl`, relations to all profile types |
+| **FarmerProfile / BuyerProfile / TransporterProfile** | Role-specific details |
+| **Product** | Listing with quantity, price, unit, image |
+| **Order** | Buyer, farmer, transporter, status, payment status |
+| **Payment** | Chapa reference |
+| **Commission** | 3% platform fee |
+| **Review** | Rating + comment |
+| **Conversation / Message** | Real-time chat |
+| **Notification** | `userId`, title, message, type, `isRead` |
+| **MarketPrice** | Commodity, price, date |
+| **ChatMessage** | Chatbot history |
+| **DiseaseDetection** | AI results |
 
-> ⚠️ **Emoji caveat:** If your PostgreSQL instance uses `WIN1252` encoding, emojis in DB strings will crash inserts. All notification strings in the backend are emoji-free for this reason. Frontend UI emojis are safe.
+> [!WARNING]
+> **Emoji caveat:** If your PostgreSQL instance uses `WIN1252` encoding, emojis in DB strings will crash inserts. All notification strings in the backend are emoji-free for this reason. Frontend UI emojis are safe.
 
 ---
 
 ## 🧪 Testing the Flow
 
-1. Register a **Farmer**, a **Buyer**, and a **Transporter** (three browsers/incognito).
-2. As Farmer: list a product.
-3. As Buyer: place an order → Farmer sees notification → Farmer accepts → Buyer pays (Chapa sandbox) → Buyer requests transporter.
-4. As Transporter: accept delivery, mark `DELIVERED`.
-5. As Buyer: leave a review.
-6. Open `/chat` and message across roles — notification bell lights up.
-7. Open `/market` — switch timeframes, zoom, pan, and place a paper-trade order.
-8. Open `/chatbot` — ask "price of maize" in English, then "gatii boqqolloo" in Afaan Oromoo.
-9. Open `/ai/disease-detection` as Farmer — upload a leaf photo.
+1. **Register** a Farmer, a Buyer, and a Transporter (three browsers / incognito windows).
+2. **Farmer:** list a product.
+3. **Buyer:** place an order → Farmer sees a notification → Farmer accepts → Buyer pays (Chapa sandbox) → Buyer requests a transporter.
+4. **Transporter:** accept the delivery and mark it `DELIVERED`.
+5. **Buyer:** leave a review.
+6. Open **`/chat`** and message across roles — the notification bell lights up.
+7. Open **`/market`** — switch timeframes, zoom, pan, and place a paper-trade order.
+8. Open **`/chatbot`** — ask *"price of maize"* in English, then *"gatii boqqolloo"* in Afaan Oromoo.
+9. Open **`/ai/disease-detection`** as a Farmer — upload a leaf photo.
 
 ---
 
@@ -317,7 +406,7 @@ agrilink-ethiopia/
 - **Model weights not in repo** — `agrilink_model.pth` (~600 MB) is excluded; download separately.
 - **PostgreSQL WIN1252** — emojis in DB strings are avoided; migrate to UTF-8 to lift this.
 - **Chapa in sandbox** — switch to live keys for production.
-- **Market data** — simulated high-density data by default; Yahoo Finance optional.
+- **Market data** — simulated high-density data by default; Yahoo Finance is optional.
 - **Market terminal trading** — paper trading only; orders, balance, order book, and trades feed are simulated client-side and reset on refresh.
 - **Chatbot** — rule-based with fuzzy matching, not an LLM.
 
@@ -341,22 +430,31 @@ agrilink-ethiopia/
 ## 🤝 Contributing
 
 1. Fork the repo
-2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit (`git commit -m "feat: add your feature"`)
-4. Push (`git push origin feat/your-feature`)
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Commit: `git commit -m "feat: add your feature"`
+4. Push: `git push origin feat/your-feature`
 5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-MIT — see [LICENSE](LICENSE) for details.
+Released under the **MIT License**.
 
 ---
 
-## 👤 Author
+## 👤 Author & Submission Info
 
-**Ttenae** — [github.com/Ttenae](https://github.com/Ttenae)
+**Individual Project**
+
+| Field | Detail |
+|---|---|
+| **Full Name** | Tesfaye Tilahun |
+| **CTC ID** | ctc-3825-26 |
+| **GitHub** | [@Ttenae](https://github.com/Ttenae) |
+| **Institution** | [Your college/university] |
+| **Course** | [Course name] |
+| **Submitted** | [Month Year] |
 
 ---
 
@@ -366,3 +464,13 @@ MIT — see [LICENSE](LICENSE) for details.
 - [Open-Meteo](https://open-meteo.com/) for free weather data
 - [Chapa](https://chapa.co/) for Ethiopian payments
 - [shadcn/ui](https://ui.shadcn.com/) for UI primitives
+
+<div align="center">
+
+<br />
+
+**Made with ❤️ for Ethiopian farmers 🇪🇹**
+
+⭐ If you like this project, give it a star!
+
+</div>
